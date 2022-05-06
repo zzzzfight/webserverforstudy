@@ -1,0 +1,40 @@
+2022-04-19 17:03:06
+_PTHREADS is not defined ! -- Main.cpp:43
+2022-04-19 17:03:11
+New connection from 172.22.130.213:34396 -- Server.cpp:57
+2022-04-19 17:03:59
+_PTHREADS is not defined ! -- Main.cpp:43
+2022-04-19 17:04:03
+New connection from 172.22.130.213:34402 -- Server.cpp:58
+2022-04-19 20:44:49
+_PTHREADS is not defined ! -- Main.cpp:43
+2022-04-19 20:45:01
+New connection from 172.22.130.213:34936 -- Server.cpp:61
+2022-04-19 20:56:56
+_PTHREADS is not defined ! -- Main.cpp:43
+2022-04-19 20:57:02
+New connection from 172.22.130.213:34982 -- Server.cpp:61
+2022-04-19 20:57:54
+_PTHREADS is not defined ! -- Main.cpp:43
+2022-04-19 20:58:04
+New connection from 172.22.130.213:34988 -- Server.cpp:61
+2022-04-23 16:41:19
+_PTHREADS is not defined ! -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Main.cpp:43
+2022-04-23 16:43:30
+_PTHREADS is not defined ! -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Main.cpp:43
+2022-04-23 16:54:47
+_PTHREADS is not defined ! -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Main.cpp:43
+2022-04-26 17:17:33
+_PTHREADS is not defined ! -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Main.cpp:43
+2022-04-26 17:17:56
+New connection from 127.0.0.1:51022 -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Server.cpp:61
+2022-04-26 17:18:22
+New connection from 127.0.0.1:51026 -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Server.cpp:61
+2022-04-26 17:20:55
+_PTHREADS is not defined ! -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Main.cpp:43
+2022-04-26 17:21:59
+New connection from 127.0.0.1:51048 -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Server.cpp:61
+2022-04-26 17:23:11
+_PTHREADS is not defined ! -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Main.cpp:43
+2022-04-26 17:24:33
+New connection from 127.0.0.1:51060 -- /home/ubuntu2004/workstation/test/webserverforstudy/版本/version-test/WebServer/Server.cpp:61
