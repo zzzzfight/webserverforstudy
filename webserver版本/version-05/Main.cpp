@@ -1,13 +1,12 @@
-#include"EventLoop.h"
+// @Author Z
+// @Email 3161349290@qq.com
+#include "Acceptor.h"
+#include "EventLoop.h"
 
-#include"Server.h"
-
-
-int main(){
-	EventLoop loop;
-	Server myserver(&loop);
-	myserver.ServerStart();
-	loop.Looping();
-
-
+int main()
+{
+	EventLoop mainLoop;
+	Acceptor acceptor(&mainLoop, 1, 9006);
+	acceptor.start();
+	mainLoop.loop();
 }

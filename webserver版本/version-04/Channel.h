@@ -1,68 +1,80 @@
-#ifndef _CHANNEL_
-#define _CHANNEL_
-#include <iostream>
+// @Author Z
+// @Email 3161349290@qq.com
+#pragma once
+
 #include <functional>
 #include <memory>
-
-// #include "EventLoop.h"
-// #include "HttpData.h"
-
-using namespace std;
-class EventLoop;
-// class Channel;
+#include <iostream>
 class HttpData;
 
+class EventLoop;
 class Channel
 {
-	using callback = typename std::function<void()>;
+public:
+	typedef std::function<void()> EventCallback;
+	Channel(EventLoop *loop, int fd);
+	~Channel()
+	{
+		std::cout << "析构channel" << std::endl;
+	}
 
 public:
-	Channel(EventLoop *loop);
-	Channel(EventLoop *loop, int fd);
+	EventLoop *ownerloop() { return ownerLoop_; }
 
-	// usin
-
-	void SetFd(int fd);
-	int GetFd();
-
-	void SetEvents(unsigned int evnt);
-	void SetREvents(unsigned int evnt);
-	// void SetEvents(unsigned int evnt);
-	unsigned int GetEvents();
-	unsigned int GetREvents();
-
-	void SetReadHandler(callback &&cb);
-	void SetWriteHandler(callback &&cb);
-	void SetConnHandler(callback &&cb);
-
-	// setHolder(std::shared_ptr<HttpData>& http);
-
-	bool EqualAndUpdateLastEvents()
+public:
+	//设置回调函数
+	void setReadCallback(EventCallback cb)
 	{
-		bool ret = (LastEvents == Events);
-		LastEvents = Events;
+		readCallback_ = std::move(cb);
+	}
+
+	void setWriteCallback(EventCallback cb)
+	{
+		writeCallback_ = std::move(cb);
+	}
+	void setConnCallback(EventCallback cb)
+	{
+		connCallback_ = std::move(cb);
+	}
+
+public:
+	void handleEvents();
+
+public:
+	// setFd
+	int fd() const { return fd_; }				//返回文件描述符
+	uint32_t events() const { return events_; } //返回
+	uint32_t revents() const { return revents_; }
+
+	void set_events(uint32_t evt) { events_ = evt; }
+	void set_revents(uint32_t revt) { revents_ = revt; }
+
+	// uint32_t get_events(){return events_;}
+	std::shared_ptr<HttpData> getHolder()
+	{
+		std::shared_ptr<HttpData> ret(http_.lock());
 		return ret;
 	}
 
-	// callback EventHandler;
-	void EventHandler();
-	void SetHolder(std::shared_ptr<HttpData> http);
+	void setHolder(std::shared_ptr<HttpData> http) { http_ = http; }
 
 private:
-	callback ReadHandler;
-	callback WriteHandler;
-	callback ErrorHandler;
-	callback ConnHanndler;
+	uint32_t events_;			 //需要监听的事件状态
+	uint32_t revents_;			 // epoll返回的事件状态
+	bool eventHandling_ = false; //
 
 private:
-	int _mfd;
-	int _state;
-	unsigned int REvents;
-	unsigned int Events;
-	unsigned int LastEvents;
-	EventLoop *_baseloop;
-	std::weak_ptr<HttpData> _http;
-	// std::weak_ptr<HttpData>holder_;
+	//回调函数
+	EventCallback readCallback_;
+	EventCallback writeCallback_;
+	EventCallback closeCallback_;
+	EventCallback connCallback_;
+
+	EventCallback errorCallback_;
+
+private:
+	//持有事件池和持有fd
+	EventLoop *ownerLoop_;
+	const int fd_;
+	std::weak_ptr<HttpData> http_;
 };
-
-#endif

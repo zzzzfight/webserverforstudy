@@ -1,52 +1,40 @@
-#pragma once
-
-// #include<sys/epoll.h>
 #include <sys/epoll.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
+#include "Channel.h"
 #include <vector>
 #include <memory>
-// #define MAXEVENTNUM 1024
-#include "Channel.h"
+#include "Timer.h"
+class HttpData;
+
+#include "./base/MutexLock.h"
+
 class Epoll
 {
 public:
-	Epoll() : epollfd(epoll_create(5))
-	{
-	}
+	Epoll();
+	~Epoll() {}
 
-	~Epoll()
-	{
-	}
-	std::vector<std::shared_ptr<Channel>> poll()
-	{
-		int fdnums = epoll_wait(epollfd, Events, MAXFDS, 0);
-		std::vector<std::shared_ptr<Channel>> ret;
-		for (int i = 0; i < fdnums; i++)
-		{
-			int fdIndex = Events[i].data.fd;
-			std::shared_ptr<Channel> curRequest = Fd2Chann[fdIndex];
-			if (curRequest)
-			{
-				// curRequest->setEvents()
-				/*
-				
-				*/ 
-				ret.push_back(curRequest);
-			}
-		}
+//增改删该对象下的产生的连接事件
+	void Epoll_add(std::shared_ptr<Channel> chn, int timeout);
+	void Epoll_mod(std::shared_ptr<Channel> chn, int timeout);
+	void Epoll_del(std::shared_ptr<Channel> chn);
+//事件轮询主体
+	std::vector<std::shared_ptr<Channel>> Polling();
 
-		return ret;
-	}
-
+//从时间堆里面删除已超时的连接
+	void HandleExpired();
 private:
-	const int static MAXFDS = 1024;
-	int epollfd;
+	int _epollfd;
+	static const int MAXFDS = 1024;
+	const static int MAXEVENTS = 1024;
 
-	// bool quit_;
-	// epoll_event Events[MAXFDS];
-	// std::vector<epoll_event> Events;
-	epoll_event Events[MAXFDS];
-	std::shared_ptr<Channel> Fd2Chann[MAXFDS];
-	// std::shared_ptr<HTTP> Fd2Http[MAXFDS];
+//管理fd对应的事件channel
+	std::shared_ptr<Channel> _fd2chan[MAXFDS];
+
+//管理fd对应的http，保持http指针的持有直至主动释放
+	std::shared_ptr<HttpData> _fd2http[MAXFDS];
+
+//epoll返回的事件
+	epoll_event _events[MAXEVENTS];
+	Timer _timemanager;
 };

@@ -1,18 +1,16 @@
-#include"Server.h"
-#include"EventLoop.h"
+#include "EventLoop.h"
 
-// #include""
-#include<iostream>
+#include "Server.h"
+#include <iostream>
 using namespace std;
 
-
-
-
-int main(){
-	EventLoop  mainloop;
-	Server myserver(&mainloop, 8);
+int main()
+{
+	// EventLoop loop;
+	// EventLoop *loop = new EventLoop();
+	EventLoop loop;
+	cout << &loop << endl;
+	Server myserver(&loop,2);
 	myserver.ServerStart();
-	mainloop.loop();
-	
-
+	loop.Looping();
 }

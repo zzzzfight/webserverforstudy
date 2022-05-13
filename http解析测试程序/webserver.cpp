@@ -6,7 +6,6 @@
 
 */
 
-
 #include <sys/socket.h>
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -156,17 +155,18 @@ int main()
 			}
 			else if (events[i].events & EPOLLIN)
 			{
-				char buffer[2048];
-				memset(buffer, '\0', 2048);
+				char buffer[4096];
+				memset(buffer, '\0', 4096);
 				// recv(tempfd,buffer,)
 				HttpData httpdata;
-				int ret = recv(tempfd, buffer, 2048, 0);
+				int ret = recv(tempfd, buffer, 4096, 0);
 				// httpdata.inbuffer = string(buffer);
 				httpdata.inbuffer.append(buffer);
-				// cout << httpdata.inbuffer << endl;
+				cout << httpdata.inbuffer << "////////";
 				httpdata.RequestLineAna();
 				outbuffer.clear();
 				outbuffer = httpdata.outbuffer;
+				// std::cout << outbuffer << "////////";
 				// if (ret)
 				// {
 				// 	buffer[ret] = '\0';

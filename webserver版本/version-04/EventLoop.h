@@ -1,52 +1,83 @@
+// @Author Z
+// @Email 3161349290@qq.com
 #pragma once
-#include <iostream>
-#include <pthread.h>
-#include <chrono>
-#include <vector>
-// test
-#include <memory>
 #include <functional>
+#include <vector>
+#include <memory>
+#include <sys/epoll.h>
 #include "Channel.h"
-#include "Epoll.h"
-// #include"HttpData.h"
-#include "../../tool/MutexLock.h"
-#include "CurrentThread.h"
-
-#include <assert.h>
-using namespace std;
+#include "EPollPoller.h"
+#include "./base/Util.h"
+#include "./base/CurrentThread.h"
+#include "./base/MutexLock.h"
 class EventLoop
 {
-	using callback = function<void(void)>;
-
 public:
+	typedef std::function<void()> Functor;
+	typedef std::shared_ptr<Channel> SP_Channel;
 	EventLoop();
+
 	~EventLoop();
-	void Looping();
 
-	bool _looping = false;
-	bool quit = false;
+	//事件池的主体函数
+	void loop();
 
-	// void UpdataLoop();
-	void UpdataEpoll(std::shared_ptr<Channel> channel, int timeout);
-	void AddToEpoll(std::shared_ptr<Channel> channel, int timeout);
-	// void SetPthreadid(pthread_t pid)
-	// {
-	// 	_pid = pid;
-	// }
+	void quit();
 
-	// void RunInLoop();
-	void DoPendingFunctor();
-	void QueueInLoop(callback &&cb);
+	void runInLoop(Functor cb);
 
-	pthread_t _pid;
-	// vector<Channel> _fd2chan;
-	shared_ptr<Epoll> _epoll;
-	MutexLock _lock;
-	// vector<HttpData>
-	const pid_t _threadid;
-	bool isInLoopThread() const { return _threadid == CurrentThread::tid(); }
-	void assertInLoopThread() { assert(isInLoopThread()); }
+	void queueInLoop(Functor cb);
+
+	void doPendingFunctors();
+
+	void addChannel(SP_Channel channel, int timeout = 0);
+	void updateChannel(SP_Channel channel, int timeout = 0);
+	void removeChannel(SP_Channel channel);
+
+	bool isInLoopThread() const
+	{
+		return threadId_ == CurrentThread::tid();
+	}
+
+	void wakeUp()
+	{
+		uint64_t one = 1;
+		ssize_t n = writen(wakeUpFd_, (char *)(&one), sizeof(one));
+		if (n != sizeof(one))
+		{
+			// log
+		}
+	}
+
+	void handleRead()
+	{
+		uint64_t one = 1;
+		ssize_t n = readn(wakeUpFd_, &one, sizeof(one));
+		wakeUpChannel_->set_events(EPOLLIN | EPOLLET);
+	}
+
+	void handleConn()
+	{
+		updateChannel(wakeUpChannel_, 0);
+	}
 
 private:
-	vector<callback> _functors;
+	static const int EPOLLTIME = 3000;	  //设置epoll_wait的阻塞时间
+	std::shared_ptr<EPollPoller> poller_; //管理的EPollPoller类
+	bool looping_ = false;
+	bool eventHanding_ = false;
+
+	std::vector<Functor> pendingFunctors_;
+	bool callingPendingFunctors_ = false;
+	MutexLock mutex_;
+
+	// std::vector<Channel>
+	std::vector<SP_Channel> activeChannels_;
+
+private:
+	int wakeUpFd_;
+	std::shared_ptr<Channel> wakeUpChannel_;
+
+private:
+	const pid_t threadId_;
 };

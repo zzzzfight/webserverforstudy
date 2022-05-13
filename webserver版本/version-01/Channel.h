@@ -1,54 +1,58 @@
 #pragma once
+
 #include <functional>
-#include "EventLoop.h"
+#include <memory>
+//状态/
+#include <iostream>
+using namespace std;
 
+typedef std::function<void()> CallBack;
+class HttpData;
 class EventLoop;
-
 class Channel
 {
-	using CallBack = typename std::function<void()>;
-	CallBack ReadFunction;
-	CallBack WriteFunction;
-	CallBack ConnFunction;
-	CallBack ErrorFunction;
+	// using CallBack = typename std::function<void()>;
 
 public:
-	//构造函数
-	Channel(EventLoop *loop, int fd) : _loop(loop), Fd(fd) {}
-	Channel(EventLoop* loop):_loop(loop){};
+	Channel(EventLoop *loop);
+	Channel(EventLoop *loop, int fd);
+	~Channel()
+	{
+		cout << "析构Channel" << endl;
+	}
+	//回调函数
+	CallBack DealWithRead;
+	CallBack DealWithWrite;
+	CallBack DealWithConn;
 
+	void SetReadCb(CallBack &&funcb);
+	void SetWriteCb(CallBack &&funcb);
+	void SetConnCb(CallBack &&funcb);
 
-	__uint32_t get_Events(void);
+	void SetEvents(unsigned int env);
+	unsigned int &GetEvents(void);
 
-	int get_Fd();
+	void SetREvents(unsigned int env);
+	unsigned int &GetREvents(void);
 
-	EventLoop *get_Loop(void);
-
-	void set_Fd(int setfd);
-
-	void set_Event(__uint32_t events);
-
-	void set_Revent(__uint32_t evn);
+	int GetFd();
+	void SetFd(int fd);
 
 	void handleEvents();
-
-	void setReadFunction(CallBack&& ReadFun){
-		ReadFunction = ReadFun;
+	void SetHolder(std::shared_ptr<HttpData> &httpdata) { _httpdata = httpdata; }
+	std::shared_ptr<HttpData> GetHolder()
+	{
+		std::shared_ptr<HttpData> ret(_httpdata.lock());
+		return ret;
 	}
 
-	void setConnFunction(CallBack&& ConnFun){
-		ConnFunction = ConnFun;
-	}
-
-	void setWriteFunction(CallBack&& WriteFun){
-		WriteFunction = WriteFun;
-	}
-
-
-
-private:
-	__uint32_t Events;
-	__uint32_t Revents;
-	int Fd;
+	// private:
 	EventLoop *_loop;
+
+	std::weak_ptr<HttpData> _httpdata;
+	int _mfd;
+
+	unsigned int _events;
+	unsigned int _revents;
+	unsigned int _lastevents;
 };

@@ -1,34 +1,76 @@
 #pragma once
+#include "Epoll.h"
 
 #include <memory>
-#include <sys/epoll.h>
-#include "../../tool/Nocopyable.h"
-#include "CurrentThread.h"
-#include "Epoll.h"
-// #include<>
-// using namespace std;
-class EventLoop : Nocopyable
+
+#include "Channel.h"
+#include <functional>
+#include <vector>
+#include "./base/CurrentThread.h"
+#include <pthread.h>
+#include <assert.h>
+#include "base/Util.h"
+
+// test
+#include <iostream>
+class EventLoop
 {
+	using Functor = std::function<void()>;
+
 public:
 	EventLoop();
 	~EventLoop();
-	void loop();
-	void assertInLoopThread()
+
+	void Looping();
+
+	void AddtoPoll(std::shared_ptr<Channel> chn, int timeout = 0);
+	// void AddtoLoop
+
+	void ShutDown(shared_ptr<Channel> chn)
 	{
-		if (!isInLoopThread())
-		{
-			abortNoInLoopThread();
-		}
+		shutDownWR(chn->GetFd());
 	}
 
-	bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
+	void RemovePoll(std::shared_ptr<Channel> chn);
+
+	void UpdatetoPoll(std::shared_ptr<Channel> chn, int timeout = 0);
+	void RunInLoop(Functor cb);
+	void QueueInLoop(Functor cb);
+	void DoPendingFunctor();
+
+	bool isInLoopThread() const
+	{
+		std::cout << "this->_threadid:" << this->_threadid << std::endl;
+
+		std::cout << "CurrentThread::tid()" << CurrentThread::tid() << std::endl;
+
+		return _threadid == CurrentThread::tid();
+	}
+	void assertInLoopThread() { assert(isInLoopThread()); }
+
+	const pid_t _threadid;
+
+	void WakeUp();
+
+	void HandleRead();
+
+	void HandleConn();
+
+	void Quit();
+	// {
+	// 	_quit = true;
+	// }
 
 private:
-	void abortNoInLoopThread();
+	std::shared_ptr<Epoll> _epoll;
+	// int
+	bool _looping;
+	bool _quit;
+	bool _eventhandling = false;
+	std::vector<Functor> _functors;
 
-	bool looping_; //确保loop()只执行一次
-	bool quit_;
-
-	const pid_t threadId_;
-	std::shared_ptr<Epoll> epoller_;
+	MutexLock _mutex;
+	int _wakeupfd;
+	std::shared_ptr<Channel> _wakeupchannel;
+	bool _callingpendingfunctors;
 };

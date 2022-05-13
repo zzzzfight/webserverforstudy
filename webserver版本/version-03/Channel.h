@@ -1,76 +1,58 @@
 #pragma once
+
 #include <functional>
 #include <memory>
-#include"HttpData.h"
+//状态/
+#include <iostream>
+using namespace std;
 
-// #include "Http.h"
-#include "EventLoop.h"
+typedef std::function<void()> CallBack;
 class HttpData;
 class EventLoop;
 class Channel
 {
+	// using CallBack = typename std::function<void()>;
+
 public:
-	Channel(EventLoop *loop, int fd)
+	Channel(EventLoop *loop);
+	Channel(EventLoop *loop, int fd);
+	~Channel()
 	{
-		_mfd = fd;
-		_loop = loop;
+		cout << "析构Channel" << endl;
+	}
+	//回调函数
+	CallBack DealWithRead;
+	CallBack DealWithWrite;
+	CallBack DealWithConn;
+
+	void SetReadCb(CallBack &&funcb);
+	void SetWriteCb(CallBack &&funcb);
+	void SetConnCb(CallBack &&funcb);
+
+	void SetEvents(unsigned int env);
+	unsigned int &GetEvents(void);
+
+	void SetREvents(unsigned int env);
+	unsigned int &GetREvents(void);
+
+	int GetFd();
+	void SetFd(int fd);
+
+	void handleEvents();
+	void SetHolder(std::shared_ptr<HttpData> &httpdata) { _httpdata = httpdata; }
+	std::shared_ptr<HttpData> GetHolder()
+	{
+		std::shared_ptr<HttpData> ret(_httpdata.lock());
+		return ret;
 	}
 
-	Channel(EventLoop *loop)
-	{
-		this->_loop = _loop;
-	}
-
-	using func_cb = typename std::function<void(void)>;
-	// func_cb DealWithConn;
-
-	void setEvents(unsigned int evnt)
-	{
-		Events = evnt;
-	}
-	unsigned int getEvents()
-	{
-		return Events;
-	}
-
-	void setREvents(unsigned int evnt)
-	{
-		REvents = evnt;
-	}
-	unsigned int getREvents()
-	{
-		return REvents;
-	}
-
-	void setReadCB(func_cb &&cb)
-	{
-		DealWithRead = cb;
-	}
-	void setWriteCB(func_cb &&cb)
-	{
-		DealWithWrite = cb;
-	}
-	void setConnCB(func_cb &&cb)
-	{
-		DealWithConn = cb;
-	}
-	void setFd(int fd){
-		_mfd = fd;
-	}
-	void SetHolder(std::shared_ptr<HttpData>& http){
-		_http = http;
-	}
-private:
-	int _mfd;
-	int state;
-	unsigned int REvents; //存储当前事件REvents
-	unsigned int Events;  //存储需要修改的事件Events
-	func_cb DealWithRead;
-	func_cb DealWithWrite;
-	func_cb DealWithConn;
-	HttpData *_http;
+	// private:
 	EventLoop *_loop;
 
-	// weak
-	std::weak_ptr<HttpData> _http;
+	std::weak_ptr<HttpData> _httpdata;
+	int _mfd;
+
+	unsigned int _events;
+	unsigned int _revents;
+  	unsigned int _lastevents;
 };

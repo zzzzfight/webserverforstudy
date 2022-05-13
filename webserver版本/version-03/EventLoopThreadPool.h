@@ -1,39 +1,27 @@
+#pragma once
 #include <vector>
-#include <assert.h>
 #include <memory>
-#include "EventLoop.h"
 #include "EventLoopThread.h"
+// class EventLoopThread
+
+class EventLoop;
 
 class EventLoopThreadPool
 {
 public:
-	EventLoopThreadPool(int _threadnum)
-		: _threadnum(_threadnum)
-	{
-	}
+	EventLoopThreadPool(EventLoop *loop, int threadnum = 8);
 
-	void ThreadPoolInit()
-	{
-		for (int i = 0; i < _threadnum; i++)
-		{
-			shared_ptr<EventLoopThread> _curthread(new EventLoopThread());
-			_threads.push_back(_curthread);
-			// _loop.push_back()
-			_loops.push_back(_curthread->startthread());
-		}
-	}
+	EventLoop *GetNextPool();
 
-	EventLoop *getNextPool()
-	{
-		EventLoop *ret = _loops[_next];
-		_next = (ret + 1) / _threadnum;
-		return ret;
-	}
+	void ThreadPoolInit();
 
 private:
-	// vector<EventLoop>
 	std::vector<EventLoop *> _loops;
 	std::vector<std::shared_ptr<EventLoopThread>> _threads;
 	int _threadnum;
 	int _next;
+
+	EventLoop *_baseloop;
+	bool _started;
+	// EventLoop
 };

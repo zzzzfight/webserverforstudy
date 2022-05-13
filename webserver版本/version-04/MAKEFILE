@@ -1,7 +1,0 @@
-CXX = g++
-CFLAGS = -std=c++11 -v -g -o
-TARGET = test
-OBJS =./Main.cpp ./Channel.cpp ./EventLoop.cpp ./EventLoopThread.cpp ./EventLoopThreadPool.cpp ./Server.cpp ./HttpData.cpp ./Epoll.cpp
-LIBS = -lpthread
-test:
-	$(CXX) $(CFLAGS) $(TARGET) $(OBJS) $(LIBS)

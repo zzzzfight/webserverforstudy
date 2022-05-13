@@ -1,57 +1,90 @@
 #include "Channel.h"
-using namespace std;
-
-__uint32_t Channel::get_Events()
+#include <sys/epoll.h>
+typedef std::function<void()> CallBack;
+Channel::Channel(EventLoop *loop, int fd)
+	: _mfd(fd),
+	  _loop(loop),
+	  _events(0),
+	  _revents(0),
+	  _lastevents(0)
 {
-	return Events;
-}
-void Channel::set_Event(__uint32_t events)
-{
-	Events = events;
-}
-
-void Channel::set_Revent(__uint32_t evn)
-{
-	Revents = evn;
 }
 
-int Channel::get_Fd()
+Channel::Channel(EventLoop *loop)
+	: _loop(loop),
+	  _events(0),
+	  _revents(0),
+	  _lastevents(0)
 {
-	return Fd;
 }
 
-void Channel::set_Fd(int setfd)
+//监听事件状态设置
+unsigned int& Channel::GetEvents()
 {
-	Fd = setfd;
+	return _events;
+}
+void Channel::SetEvents(unsigned int env)
+{
+	_events = env;
 }
 
-EventLoop *Channel::get_Loop(void)
+unsigned int &Channel::GetREvents(void)
 {
-	return _loop;
+	return _revents;
+}
+
+void Channel::SetREvents(unsigned int env)
+{
+	_revents = env;
+}
+
+//回调函数设置
+void Channel::SetReadCb(CallBack &&funcb)
+{
+	DealWithRead = funcb;
+}
+void Channel::SetWriteCb(CallBack &&funcb)
+{
+	DealWithWrite = funcb;
+}
+void Channel::SetConnCb(CallBack &&funcb)
+{
+	DealWithConn = funcb;
+}
+
+//文件描述符
+
+void Channel::SetFd(int fd)
+{
+	_mfd = fd;
+}
+int Channel::GetFd()
+{
+	return _mfd;
 }
 
 void Channel::handleEvents()
 {
-	Events = 0;
-	if ((Revents & EPOLLHUP) && !(Revents & EPOLLIN))
+	_events = 0;
+	if ((_revents & EPOLLHUP) && !(_revents & EPOLLIN))
 	{
-		Events = 0;
+		_events = 0;
 		return;
 	}
-	if (Revents & EPOLLERR)
+	if (_revents & EPOLLERR)
 	{
-		if (ErrorFunction)
-			ErrorFunction();
-		Events = 0;
+		//   if (errorHandler_) errorHandler_();
+		_events = 0;
 		return;
 	}
-	if (Revents & (EPOLLIN | EPOLLPRI | EPOLLRDHUP))
+	if (_revents & (EPOLLIN | EPOLLPRI | EPOLLRDHUP))
 	{
-		ReadFunction();
+		DealWithRead();
+		
 	}
-	if (Revents & EPOLLOUT)
+	if (_revents & EPOLLOUT)
 	{
-		WriteFunction();
+		DealWithWrite();
 	}
-	ConnFunction();
+	DealWithConn();
 }

@@ -1,83 +1,44 @@
+// @Author Z
+// @Email 3161349290@qq.com
 #include "Channel.h"
 #include <sys/epoll.h>
 
-Channel::Channel(EventLoop *loop)
-	: _baseloop(loop)
-{
-}
 Channel::Channel(EventLoop *loop, int fd)
-	: _baseloop(loop),
-	  _mfd(fd)
+	: ownerLoop_(loop),
+	  fd_(fd)
 {
 }
 
-void Channel::SetFd(int fd)
+void Channel::handleEvents()
 {
-	_mfd = fd;
-}
-int Channel::GetFd()
-{
-	return _mfd;
-}
-
-void Channel::SetEvents(unsigned int evnt)
-{
-	Events = evnt;
-}
-void Channel::SetREvents(unsigned int evnt)
-{
-	REvents = evnt;
-}
-
-unsigned int Channel::GetEvents()
-{
-	return Events;
-}
-unsigned int Channel::GetREvents()
-{
-	return REvents;
-}
-
-void Channel::SetReadHandler(callback &&cb)
-{
-	ReadHandler = cb;
-}
-void Channel::SetWriteHandler(callback &&cb)
-{
-	WriteHandler = cb;
-}
-void Channel::SetConnHandler(callback &&cb)
-{
-	ConnHanndler = cb;
-}
-
-void Channel::EventHandler()
-{
-	Events = 0;
-	if ((REvents & EPOLLHUP) && !(REvents & EPOLLIN))
+	// events_
+	eventHandling_ = true;
+	if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN))
 	{
-		Events = 0;
+		events_ = 0;
+		if (closeCallback_)
+			closeCallback_();
 		return;
 	}
-	if (REvents & EPOLLERR)
+	if (revents_ & EPOLLERR)
 	{
-		if (ErrorHandler)
-			ErrorHandler();
-		Events = 0;
+		if (errorCallback_)
+			errorCallback_();
 		return;
 	}
-	if (REvents & (EPOLLIN | EPOLLPRI | EPOLLRDHUP))
+	if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP))
 	{
-		ReadHandler();
+		if (readCallback_)
+			readCallback_();
 	}
-	if (REvents & EPOLLOUT)
+	if (revents_ & EPOLLOUT)
 	{
-		WriteHandler();
+		if (writeCallback_)
+			writeCallback_();
 	}
-	ConnHanndler();
-}
-
-void Channel::SetHolder(std::shared_ptr<HttpData> http)
-{
-	_http = http;
+	if (connCallback_)
+		connCallback_();
+	eventHandling_ = false;
+	std::cout << "this->http_.use_count():" << this->http_.use_count() << std::endl;
+	return;
 }

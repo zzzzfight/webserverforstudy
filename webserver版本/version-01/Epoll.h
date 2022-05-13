@@ -1,56 +1,40 @@
-// epoll是一个管理epoll操作的类，同时是CHANNEL和fd的中间层，负责epoll操作以及 fd与channel的转换
-
-#include <sys/socket.h>
 #include <sys/epoll.h>
-#include <memory>
+#include <sys/socket.h>
 #include "Channel.h"
 #include <vector>
-#include <assert.h>
+#include <memory>
+#include "Timer.h"
+class HttpData;
 
-using SP_Channel = typename std::shared_ptr<Channel>;
-class Channel;
+#include "./base/MutexLock.h"
+
 class Epoll
 {
 public:
-	// typedef std::shared_ptr<Channel> SP_Channel;
-
 	Epoll();
+	~Epoll() {}
 
-	//返回已触发的事件
-	std::vector<SP_Channel> Polling(int EventNums);
-	void epoll_add(SP_Channel request, int timeout);
-	void epoll_del(SP_Channel request);
-	void epoll_mod(SP_Channel request, int timeout);
+//增改删该对象下的产生的连接事件
+	void Epoll_add(std::shared_ptr<Channel> chn, int timeout);
+	void Epoll_mod(std::shared_ptr<Channel> chn, int timeout);
+	void Epoll_del(std::shared_ptr<Channel> chn);
+//事件轮询主体
+	std::vector<std::shared_ptr<Channel>> Polling();
 
-	vector<SP_Channel> poll()
-	{
-		int nums = epoll_wait(EpollFd, &*Events.begin(), MAXFD, EPOLLTIMEWAIT);
-		vector<SP_Channel> ret;
-		for (int i = 0; i < nums; i++)
-		{
-			int tempfd = Events[i].data.fd;
-			// if(Fd2Chan[])
-			SP_Channel tempret = Fd2Chan[tempfd];
-			if (!tempret)
-			{
-			}
-			else
-			{
-				tempret->set_Revent(Events[i].events);
-				tempret->set_Event(0);
-			}
-			ret.push_back(tempret);
-		}
-		return ret;
-	}
-
+//从时间堆里面删除已超时的连接
+	void HandleExpired();
 private:
-	// vector<SP_Channel>list;
-	// int EventNums;				// epoll_wait()返回的就绪事件数量
-	int EpollFd;					 //监听的epollfd
-	std::vector<epoll_event> Events; //事件数组
+	int _epollfd;
+	static const int MAXFDS = 1024;
+	const static int MAXEVENTS = 1024;
 
-	std::vector<SP_Channel> Fd2Chan;
-	const unsigned int EPOLLTIMEWAIT = 10000;
-	const unsigned int MAXFD = 10000;
+//管理fd对应的事件channel
+	std::shared_ptr<Channel> _fd2chan[MAXFDS];
+
+//管理fd对应的http，保持http指针的持有直至主动释放
+	std::shared_ptr<HttpData> _fd2http[MAXFDS];
+
+//epoll返回的事件
+	epoll_event _events[MAXEVENTS];
+	Timer _timemanager;
 };
